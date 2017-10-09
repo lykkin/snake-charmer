@@ -15,6 +15,8 @@ const { functionTypes, returnTypes, callTypes } = require('./tokenTypes')
 
 // Keys we will be defining on the tokens as we iterate through them
 const ourKeys = new Set([
+  'mutates',
+  'declares',
   'calls',
   'parent',
   'returns'
@@ -82,19 +84,21 @@ function getMetaData(rootToken) {
       } else if (callTypes.has(type)) {
         // Parse call statements immediately
         callGrapher.parseCallToken(currentToken)
+      } else if (type === 'BlockStatement') {
+        typer.parseBlockToken(currentToken)
       }
 
       // Push nodes onto the stack and annotate nodes with their parents
-      Object.keys(currentToken).forEach(function(key) {
+      for (let key of Object.keys(currentToken)) {
         if (ourKeys.has(key)) {
-          return
+          continue
         }
 
         var value = currentToken[key]
         if (value && value instanceof Object) {
           if (Array.isArray(value)) {
-            for (var i = 0; i < value.length; ++i) {
-              value[i].parent = currentToken
+            for (let t of value) {
+              t.parent = currentToken
             }
             Array.prototype.push.apply(toRelax, value)
           } else {
@@ -102,7 +106,7 @@ function getMetaData(rootToken) {
             toRelax.push(value)
           }
         }
-      })
+      }
 
       // Track which file the current file loads
       var requirePath = getRequirePath(currentToken)
@@ -162,4 +166,4 @@ try {
 }
 
 var graph = parseProgram(root)
-console.log(graph)
+//console.log(graph)
