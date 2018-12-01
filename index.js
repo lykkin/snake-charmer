@@ -23,9 +23,10 @@ const ourKeys = new Set([
 ])
 
 // Replicates node's module loader so we can use node's machinery for route resolution
-function getLoadNode(filename, parent, isMain) {
+function getLoadNode(filename, parent) {
+  const localRequire = Module.createRequireFromPath(parent)
   try {
-    var moduleFilename = Module._resolveFilename(filename, parent, isMain)
+    var moduleFilename = localRequire.resolve(filename)
   } catch (e) {
     console.warn(`
       Could not find package ${filename}
@@ -34,17 +35,6 @@ function getLoadNode(filename, parent, isMain) {
       path: 'not found'
     }
   }
-  var m = new Module(moduleFilename, parent)
-
-  if (isMain) {
-    m.id = '.'
-  } else {
-    m.id = moduleFilename
-  }
-
-  m.filename = moduleFilename
-
-  m.paths = Module._nodeModulePaths(path.dirname(moduleFilename))
 
   var source = null
   if (path.extname(moduleFilename) === '.js') {
@@ -56,9 +46,8 @@ function getLoadNode(filename, parent, isMain) {
   }
 
   return {
-    module: m,
     path: moduleFilename,
-    source: source
+    source
   }
 }
 
@@ -109,7 +98,7 @@ function getMetaData(rootToken) {
       }
 
       // Track which file the current file loads
-      var requirePath = getRequirePath(currentToken)
+      const requirePath = getRequirePath(currentToken)
       if (requirePath) {
         loadPaths.push(requirePath)
       }
@@ -134,7 +123,7 @@ function parseProgram(root) {
       currentToken.functionTokens = tokenMeta.functionTokens
 
       loads[currentToken.path] = fileLoads.map(function(path) {
-        return getLoadNode(path, currentToken.module, false)
+        return getLoadNode(path, currentToken.path)
       })
 
       Array.prototype.push.apply(
@@ -158,7 +147,7 @@ function getRequirePath(token) {
 
 try {
   var entryPath = process.argv[2]
-  var root = getLoadNode(entryPath, null, true)
+  var root = getLoadNode(entryPath, '.')
 } catch (e) {
   console.log('could not load ' + entryPath)
   console.log('error', e)
@@ -166,4 +155,4 @@ try {
 }
 
 var graph = parseProgram(root)
-//console.log(graph)
+console.log(Object.keys(graph))
