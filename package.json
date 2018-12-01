@@ -3,5 +3,8 @@
   "version": "0.0.1",
   "dependencies": {
     "esprima": "^4.0.0"
+  },
+  "devDependencies": {
+    "tap": "^12.1.0"
   }
 }

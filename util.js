@@ -1,7 +1,6 @@
 'use strict'
 
 //lifted from internals
-
 /**
  * Find end of shebang line and slice it off
  */
@@ -36,7 +35,44 @@ function stripShebang(content) {
   return content;
 }
 
+// Class to test the equality of variables
+class DisjointSetNode {
+  constructor(value, parent=null) {
+    this.value = value
+    this.parent = parent
+  }
+
+  get root() {
+    if (!this.parent) {
+      return this
+    }
+
+    // Path compress while we traverse
+    return this.parent = this.parent.root
+  }
+
+  set root(newRoot) {
+    var currNode = this
+    while (currNode.parent) {
+      // Path compress while we traverse
+      var oldParent = currNode.parent
+      currNode.parent = newRoot
+      currNode = oldParent
+    }
+
+    return currNode.parent = newRoot
+  }
+
+  equals(node) {
+    return this.root === node.root
+  }
+
+  union(node) {
+    this.root = node
+  }
+}
 
 module.exports = {
-  stripShebang
+  stripShebang,
+  DisjointSetNode
 }
